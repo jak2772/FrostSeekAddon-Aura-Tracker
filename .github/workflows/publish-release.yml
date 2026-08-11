@@ -45,7 +45,11 @@ jobs:
             echo "Release $TAG already exists; nothing to do."
             exit 0
           fi
-          gh release create "$TAG" "$ASSET" \
+          prerelease=""
+          case "$TAG" in
+            *-alpha*|*-beta*|*-rc*) prerelease="--prerelease" ;;
+          esac
+          gh release create "$TAG" "$ASSET" $prerelease \
             --target "$GITHUB_SHA" \
             --title "FrostSeek Aura Tracker $TAG" \
             --notes-file "$NOTES"

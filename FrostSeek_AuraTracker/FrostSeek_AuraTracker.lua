@@ -1,5 +1,5 @@
 -- ============================================================================
--- FrostSeek Aura Tracker v1.4.1
+-- FrostSeek Aura Tracker v1.5.0-beta.1
 -- Companion module for FrostSeek 2.2.5 / WoW Ascension (3.3.5 client).
 --
 -- This addon DOES NOT modify or redistribute FrostSeek source.
@@ -16,7 +16,7 @@ local FSA = CreateFrame("Frame", "FrostSeekAuraTrackerEventFrame")
 _G.FrostSeekAuraTracker = FSA
 
 local PFX = "|cff88ccff[FrostSeek Aura]|r "
-local VERSION = "1.4.1"
+local VERSION = "1.5.0-beta.1"
 local REQUIRED_FROSTSEEK_VERSION = "2.2.5"
 local dependencyWarningShown = false
 
@@ -613,9 +613,21 @@ local function NewCheckbox(parent, label, checked, callback)
 end
 
 local function NewEdit(parent, w, h, text, numeric)
-    local e = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
+    -- InputBoxTemplate's three-piece artwork breaks at several Ascension UI
+    -- scales. Draw one complete field so its centre and caps cannot separate.
+    local e = CreateFrame("EditBox", nil, parent)
     e:SetSize(w, h)
     e:SetAutoFocus(false)
+    e:SetFontObject("GameFontHighlightSmall")
+    e:SetTextInsets(7, 7, 2, 2)
+    local border = e:CreateTexture(nil, "BACKGROUND")
+    border:SetPoint("TOPLEFT", -1, 1)
+    border:SetPoint("BOTTOMRIGHT", 1, -1)
+    ColorTexture(border, "border", {0.25, 0.30, 0.36, 1})
+    local bg = e:CreateTexture(nil, "BACKGROUND")
+    bg:SetAllPoints()
+    ColorTexture(bg, "bgInput", {0.025, 0.03, 0.04, 0.98})
+    e.border, e.bg = border, bg
     e:SetText(tostring(text or ""))
     if numeric then e:SetNumeric(true) end
     return e
@@ -3086,7 +3098,7 @@ local function CreateUI(parent)
     -- RIGHT COLUMN: recruitment replies ---------------------------------------
     local candBlock = NewBlock(frame)
     candBlock:SetPoint("TOPLEFT", statusBlock, "TOPRIGHT", 10, 0)
-    candBlock:SetSize(320, 272)
+    candBlock:SetSize(320, 250)
 
     local ct = candBlock:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     ct:SetPoint("TOPLEFT", 12, -10)
@@ -3188,13 +3200,13 @@ local function CreateUI(parent)
     local level59Alert = NewCheckbox(alertBlock, "Level 59 replacement warning",
         FrostSeekAuraDB.announceLevel59,
         function(v) FrostSeekAuraDB.announceLevel59 = v end)
-    level59Alert:SetPoint("TOPLEFT", 10, -158)
+    level59Alert:SetPoint("TOPLEFT", 10, -150)
 
     ui.alertChecks = {c1,leaderOnly,soundAlert,c2,c3,c4,c5,level59Alert}
 
     -- Keep the complete right column inside FrostSeek.
     -- Candidate overflow is handled by the scroll frames above.
-    alertBlock:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -18, 14)
+    alertBlock:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -18, 24)
 
     return frame
 end
@@ -3976,3 +3988,20 @@ end
 
 -- Register immediately, then again after the rest of the UI/addons initialize.
 RegisterFrostSeekAuraSlashCommands(false)
+
+-- Public bridge used by the v1.5 recruiter workspace. Gameplay state remains
+-- owned by this module so the expanded workflow cannot fork Aura decisions.
+FSA.Runtime = {
+    state = state,
+    key = Key,
+    trim = Trim,
+    isInManastorm = IsInManastorm,
+    scan = Scan,
+    refresh = function() if RefreshUI then RefreshUI() end end,
+    toggleAuraProvider = ToggleAuraProvider,
+    postRoster = PostRoster,
+    readyCheck = StartReadyCheck,
+    optimizeGroups = SuggestGroupOptimization,
+    sendGroupMessage = SendManualGroupMessage,
+    print = Print,
+}

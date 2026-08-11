@@ -10,6 +10,9 @@ It adds a dedicated **Auras** tab directly into FrostSeek and provides subgroup 
 
 **v1.4.1**
 
+Non-live verification build: **v1.5.0-beta.1**. This adds the phased FrostSeek
+recruiter workspace while keeping v1.4.1 as the recommended stable release.
+
 Target environment:
 
 - Project Ascension

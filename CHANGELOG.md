@@ -2,6 +2,21 @@
 
 All notable changes to FrostSeek Aura Tracker are documented here.
 
+## [1.5.0-beta.1] - 2026-08-11
+
+### Verification build
+- Adds a FrostSeek-styled, phased Manastorm recruiter workspace.
+- Adds editable roster targets and persistent applicant, reservation, and rejection state.
+- Adds applicant role/Aura correction plus Invite, Reserve, Release, and Reject actions.
+- Adds three live raid-group cards with clickable Aura assignments.
+- Adds stepwise subgroup optimization, Ready Check, roster posting, and guarded Manastorm start.
+- Adds run monitoring, persistent stepwise rebuild recovery, and guarded Post & Leave.
+- Adds editable recruitment, roster, level, and leave message templates.
+- Adds direct minimap access to the integrated recruiter workspace.
+- Replaces broken stock input templates with complete FrostSeek-styled fields.
+- Constrains the Alerts panel inside FrostSeek's available tab height.
+- Intended for interface and in-raid verification; v1.4.1 remains the stable release.
+
 ## [1.4.1] - 2026-08-11
 
 ### Fixed

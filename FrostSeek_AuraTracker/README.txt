@@ -1,4 +1,4 @@
-FrostSeek Aura Tracker v1.4.1
+FrostSeek Aura Tracker v1.5.0-beta.1 (verification build)
 
 Requires FrostSeek 2.2.5 or newer:
 https://github.com/ayro-CMD/FrostSeek
@@ -22,3 +22,5 @@ https://github.com/ayro-CMD/FrostSeek
 - Shows a clickable Aura of Experience icon on every occupied roster slot.
 - Adds roster posting, ready-check, and advisory group optimization actions.
 - Fixes recruitment, alert, chat, scrollbar, and message-field clipping.
+- Adds the non-live phased recruiter workspace for v1.5 verification.
+- Use Recruiter Setup or the Bonus XP minimap button to open it.
