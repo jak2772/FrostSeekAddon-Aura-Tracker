@@ -8,7 +8,7 @@ It adds a dedicated **Auras** tab directly into FrostSeek and provides subgroup 
 
 ## Current release
 
-**v1.1.4**
+**v1.3.0**
 
 Target environment:
 
@@ -24,7 +24,7 @@ Target environment:
 - [FrostSeek 2.2.5 or newer](https://github.com/ayro-CMD/FrostSeek)
 - Project Ascension compatible WoW 3.3.5 client
 
-FrostSeek is mandatory: WoW loads it before Aura Tracker, and v1.1.4 verifies
+FrostSeek is mandatory: WoW loads it before Aura Tracker, and v1.3.0 verifies
 that the loaded version is at least 2.2.5 before adding the Auras tab.
 
 This is a **companion addon**. It does not modify or redistribute FrostSeek source.
@@ -61,7 +61,7 @@ After loading, FrostSeek should contain a new **Auras** tab.
 Expected startup messages:
 
 ```text
-[FrostSeek Aura] Loaded Aura Tracker v1.1.4
+[FrostSeek Aura] Loaded Aura Tracker v1.3.0
 [FrostSeek Aura] Commands ready: /fsaura and /fsa
 ```
 
@@ -155,7 +155,10 @@ The addon avoids guessing provider identity unless it has enough evidence.
 
 ## Manastorm-aware mode
 
-When entering Manastorm, the addon waits approximately **2.5 seconds** for roster and Aura state to settle, then performs an automatic audit.
+When entering Manastorm, the addon waits **5 seconds** for players, roster data,
+and Aura state to load, then performs one automatic audit. Normal Aura
+distribution and provider join/leave announcements are suppressed during this
+grace window, preventing an early failure message followed by a successful one.
 
 Example:
 
@@ -243,7 +246,18 @@ Controls include:
 
 ## Recruitment reply parsing
 
-Only an exact, case-insensitive, whitespace-trimmed:
+Applicant whispers are parsed for:
+
+- Tank, Heal, or DPS role
+- Aura availability
+- character level from 1 to 60
+
+When enabled, the addon asks one deduplicated follow-up question for the next
+missing detail and confirms the completed application. The templates can be
+reviewed with `/fsaura messages`, customized with `/fsaura message`, or reset
+with `/fsaura message reset`.
+
+For invitation safety, only an exact, case-insensitive, whitespace-trimmed:
 
 ```text
 aura
@@ -260,7 +274,7 @@ AURA
 aura 
 ```
 
-These do not:
+These can be parsed and tracked, but do not auto-invite:
 
 ```text
 I have aura
@@ -270,7 +284,8 @@ yes
 dps no aura
 ```
 
-Non-exact replies are kept separately under **Non-aura candidates**.
+Replies declaring Aura are shown under **Aura candidates**. Other applicant
+replies are kept under **Non-aura candidates**.
 
 Auto-invite can only trigger for an exact Aura candidate.
 
@@ -281,7 +296,9 @@ Candidate lists are independently scrollable.
 Candidate rows show:
 
 - player name
+- parsed role, Aura answer, and level
 - actual whisper text
+- captured reply count in the tooltip
 - status
 - Invite
 - Mark
@@ -386,6 +403,25 @@ The overlay can be:
 
 Position and scale are stored separately to avoid frame-scaling drift.
 
+## Combat role inference
+
+While grouped, the addon watches the WoW combat log and builds temporary role
+evidence for current raid members:
+
+- sustained effective healing to group members indicates a likely **Healer**;
+- sustained hostile or environmental damage taken indicates a likely **Tank**;
+- evidence decays over time so an old pull does not label a player forever;
+- minimum event, amount, and raid-share thresholds reject brief incidental
+  healing and isolated damage spikes; and
+- at most two Tanks and three Healers are inferred.
+
+The overlay shows a compact `T:` / `H:` summary. Use `/fsaura roles` for names
+and confidence, or `/fsaura rolesreset` to discard accumulated evidence.
+
+Role inference is intentionally advisory. Encounter mechanics, off-healing,
+absorbs, pets, and unusual builds can affect combat-log totals. It never marks
+or changes Aura providers.
+
 ## Slash commands
 
 Main command:
@@ -406,12 +442,19 @@ Useful commands:
 /fsaura
 /fsaura scan
 /fsaura sensors
+/fsaura roles
+/fsaura rolesreset
 /fsaura overlay
 /fsaura mark <player>
 /fsaura unmark <player>
 /fsaura forget <player>
 /fsaura forget
 /fsaura recruit
+/fsaura chat
+/fsaura say <message>
+/fsaura messages
+/fsaura message <key> <text>
+/fsaura message reset
 ```
 
 ## Updating
@@ -477,12 +520,12 @@ FrostSeek_AuraTracker/
 `-- README.txt
 
 dist/
-`-- FrostSeek_AuraTracker-v1.1.4.zip
+`-- FrostSeek_AuraTracker-v1.3.0.zip
 
 README.md
 CHANGELOG.md
 LICENSE
-RELEASE_v1.1.4.md
+RELEASE_v1.3.0.md
 .gitignore
 publish-release.ps1
 ```

@@ -7,6 +7,7 @@ Thumbs.db
 .idea/
 
 # Temporary / test builds
+work/
 *_test/
 *.log
 __pycache__/

@@ -49,4 +49,3 @@ jobs:
             --target "$GITHUB_SHA" \
             --title "FrostSeek Aura Tracker $TAG" \
             --notes-file "$NOTES"
-

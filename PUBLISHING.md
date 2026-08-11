@@ -36,7 +36,7 @@ The script will:
 1. initialize Git if required
 2. commit the repository
 3. push `main`
-4. create/update tag `v1.1.4`
-5. create GitHub Release `v1.1.4`
-6. attach `dist/FrostSeek_AuraTracker-v1.1.4.zip`
-7. use `RELEASE_v1.1.4.md` as the release notes
+4. create/update tag `v1.3.0`
+5. create GitHub Release `v1.3.0`
+6. attach `dist/FrostSeek_AuraTracker-v1.3.0.zip`
+7. use `RELEASE_v1.3.0.md` as the release notes

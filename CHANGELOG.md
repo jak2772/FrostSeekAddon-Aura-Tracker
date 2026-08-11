@@ -2,6 +2,41 @@
 
 All notable changes to FrostSeek Aura Tracker are documented here.
 
+## [1.3.0] - 2026-08-11
+
+### Added
+- Conversational recruitment parsing for applicant role, Aura availability, and level.
+- Optional, deduplicated follow-up whispers with configurable message templates.
+- Richer candidate rows, reply history details, and an auto-follow-up UI toggle.
+- Recent raid/party chat capture through `/fsaura chat` and group sending through `/fsaura say`.
+
+### Fixed
+- Replaced the contradictory `Incorrect Aura distribution: Aura distribution healthy` report.
+- When every subgroup reports an Aura, chat now says so and identifies any subgroup whose provider is unknown.
+- Kept exact `aura` as the only automatic invitation trigger.
+
+## [1.2.1] - 2026-08-11
+
+### Fixed
+- Increased the Manastorm entry Aura-settle delay from 2.5 to 5 seconds.
+- Suppressed distribution and provider roster announcements during entry loading.
+- Prevented the settled entry audit from scheduling a second distribution alert.
+- Clears stale pending Aura alerts when entering or leaving Manastorm.
+
+## [1.2.0] - 2026-08-11
+
+### Added
+- Combat-log role evidence for current raid members.
+- Conservative Healer inference from sustained effective healing.
+- Conservative Tank inference from sustained hostile/environmental damage taken.
+- Decaying evidence, confidence labels, and caps of two Tanks and three Healers.
+- Compact combat-role summary in the overlay.
+- `/fsaura roles` and `/fsaura rolesreset` commands.
+
+### Important
+- Combat roles are advisory and remain separate from Aura-provider assignments.
+- Aura coverage sensing still cannot directly identify an unknown provider.
+
 ## [1.1.4] - 2026-08-11
 
 ### Added
