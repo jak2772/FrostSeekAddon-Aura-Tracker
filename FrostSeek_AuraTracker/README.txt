@@ -1,4 +1,4 @@
-FrostSeek Aura Tracker v1.4.0
+FrostSeek Aura Tracker v1.4.1
 
 Requires FrostSeek 2.2.5 or newer:
 https://github.com/ayro-CMD/FrostSeek
@@ -21,3 +21,4 @@ https://github.com/ayro-CMD/FrostSeek
 - Replaces the old coverage rows with three live five-player raid-group panels.
 - Shows a clickable Aura of Experience icon on every occupied roster slot.
 - Adds roster posting, ready-check, and advisory group optimization actions.
+- Fixes recruitment, alert, chat, scrollbar, and message-field clipping.

@@ -1,5 +1,5 @@
 -- ============================================================================
--- FrostSeek Aura Tracker v1.4.0
+-- FrostSeek Aura Tracker v1.4.1
 -- Companion module for FrostSeek 2.2.5 / WoW Ascension (3.3.5 client).
 --
 -- This addon DOES NOT modify or redistribute FrostSeek source.
@@ -16,7 +16,7 @@ local FSA = CreateFrame("Frame", "FrostSeekAuraTrackerEventFrame")
 _G.FrostSeekAuraTracker = FSA
 
 local PFX = "|cff88ccff[FrostSeek Aura]|r "
-local VERSION = "1.4.0"
+local VERSION = "1.4.1"
 local REQUIRED_FROSTSEEK_VERSION = "2.2.5"
 local dependencyWarningShown = false
 
@@ -2890,8 +2890,9 @@ local function CreateUI(parent)
             aura:SetSize(18, 18)
             local auraTexture = aura:CreateTexture(nil, "ARTWORK")
             auraTexture:SetAllPoints()
-            auraTexture:SetTexture((GetSpellTexture and GetSpellTexture(818059)) or
-                                   "Interface\\Icons\\Spell_Holy_GreaterBlessingofKings")
+            -- Bundle the Ascension Aura of Experience artwork: spell IDs and
+            -- client caches are not reliable while the setup UI is created.
+            auraTexture:SetTexture("Interface\\AddOns\\FrostSeek_AuraTracker\\Textures\\AuraOfExperience")
             aura.texture = auraTexture
 
             local name = playerRow:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -3024,6 +3025,24 @@ local function CreateUI(parent)
     scanCheck:SetPoint("TOPLEFT", 10, -108)
     ui.scanCheck = scanCheck
 
+    local chatLabel = recruitBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    chatLabel:SetPoint("TOPLEFT", 210, -111)
+    chatLabel:SetText("Raid chat:")
+
+    local chatEdit = NewEdit(recruitBlock, 220, 20, "", false)
+    chatEdit:SetPoint("LEFT", chatLabel, "RIGHT", 7, 0)
+    chatEdit:SetMaxLetters(220)
+    ui.chatEdit = chatEdit
+
+    local sendChat = NewButton(recruitBlock, 54, 20, "Send")
+    sendChat:SetPoint("LEFT", chatEdit, "RIGHT", 6, 0)
+    local function SendChatEdit()
+        if SendManualGroupMessage(chatEdit:GetText()) then chatEdit:SetText("") end
+        chatEdit:ClearFocus()
+    end
+    sendChat:SetScript("OnClick", SendChatEdit)
+    chatEdit:SetScript("OnEnterPressed", SendChatEdit)
+
     local nowBtn = NewButton(recruitBlock, 82, 25, "Advertise")
     nowBtn:SetPoint("BOTTOMLEFT", 12, 13)
     nowBtn:SetScript("OnClick", SendRecruitment)
@@ -3077,15 +3096,19 @@ local function CreateUI(parent)
     cd:SetPoint("TOPLEFT", 12, -30)
     cd:SetWidth(295)
     cd:SetJustifyH("LEFT")
-    cd:SetText("Parses role, Aura, and level. Exact 'aura' remains the only auto-invite trigger.")
+    cd:SetHeight(16)
+    cd:SetText("Role + Aura + level. Exact 'aura' can auto-invite.")
     cd:SetTextColor(0.60, 0.65, 0.72)
 
+    local candidateScrollerIndex = 0
     local function CreateCandidateScroller(parent, titleText, topY)
         local titleTextObj = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         titleTextObj:SetPoint("TOPLEFT", 12, topY)
         titleTextObj:SetText(titleText)
 
-        local scroll = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
+        candidateScrollerIndex = candidateScrollerIndex + 1
+        local scrollName = "FrostSeekAuraCandidateScroll" .. candidateScrollerIndex
+        local scroll = CreateFrame("ScrollFrame", scrollName, parent, "UIPanelScrollFrameTemplate")
         scroll:SetPoint("TOPLEFT", 10, topY - 18)
         scroll:SetSize(278, 68)
 
@@ -3099,6 +3122,7 @@ local function CreateUI(parent)
             scroll = scroll,
             child = child,
             rows = {},
+            scrollbar = _G[scrollName .. "ScrollBar"],
         }
     end
 
@@ -3165,24 +3189,6 @@ local function CreateUI(parent)
         FrostSeekAuraDB.announceLevel59,
         function(v) FrostSeekAuraDB.announceLevel59 = v end)
     level59Alert:SetPoint("TOPLEFT", 10, -158)
-
-    local chatLabel = alertBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    chatLabel:SetPoint("BOTTOMLEFT", 10, 12)
-    chatLabel:SetText("Chat:")
-
-    local chatEdit = NewEdit(alertBlock, 185, 20, "", false)
-    chatEdit:SetPoint("BOTTOMLEFT", 48, 7)
-    chatEdit:SetMaxLetters(220)
-    ui.chatEdit = chatEdit
-
-    local sendChat = NewButton(alertBlock, 62, 20, "Send")
-    sendChat:SetPoint("BOTTOMRIGHT", -8, 7)
-    local function SendChatEdit()
-        if SendManualGroupMessage(chatEdit:GetText()) then chatEdit:SetText("") end
-        chatEdit:ClearFocus()
-    end
-    sendChat:SetScript("OnClick", SendChatEdit)
-    chatEdit:SetScript("OnEnterPressed", SendChatEdit)
 
     ui.alertChecks = {c1,leaderOnly,soundAlert,c2,c3,c4,c5,level59Alert}
 
@@ -3304,6 +3310,9 @@ RefreshCandidates = function()
 
         widget.child:SetHeight(math.max(68, #list * rowHeight))
         widget.scroll:UpdateScrollChildRect()
+        if widget.scrollbar then
+            if (#list * rowHeight) > 68 then widget.scrollbar:Show() else widget.scrollbar:Hide() end
+        end
     end
 
     RenderList(ui.auraCandidateList, state.candidates, true)
@@ -3385,7 +3394,7 @@ RefreshUI = function()
                 row.name:SetText("|cff555555Empty|r")
                 row.level:SetText("")
                 row.role:SetText("")
-                row.aura.texture:SetAlpha(0.05)
+                row.aura.texture:SetAlpha(0)
                 if row.aura.texture.SetDesaturated then row.aura.texture:SetDesaturated(true) end
                 row.aura:SetScript("OnClick", nil)
                 row.aura:SetScript("OnEnter", nil)
@@ -3428,6 +3437,7 @@ RefreshUI = function()
     if previewText == "" then previewText = generatedMessage or "Aura recruitment not required." end
     if ui.preview and not ui.preview:HasFocus() and ui.preview:GetText() ~= previewText then
         ui.preview:SetText(previewText)
+        ui.preview:SetCursorPosition(0)
     end
 
     local slot = tonumber(FrostSeekAuraDB.recruitChannel) or 1

@@ -2,6 +2,16 @@
 
 All notable changes to FrostSeek Aura Tracker are documented here.
 
+## [1.4.1] - 2026-08-11
+
+### Fixed
+- Replaced the incorrect Paladin fallback icon with bundled Aura of Experience artwork.
+- Prevented the recruitment-reply description from overlapping the Aura candidate heading.
+- Moved the inline raid-chat composer out of the alert toggles.
+- Hid candidate scrollbars when their lists do not overflow.
+- Hid Aura icons on empty roster slots while retaining grey clickable icons on actual players.
+- Reset the editable recruitment field to its first character after automatic refreshes.
+
 ## [1.4.0] - 2026-08-11
 
 ### Added

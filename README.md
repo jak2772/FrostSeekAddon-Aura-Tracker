@@ -8,7 +8,7 @@ It adds a dedicated **Auras** tab directly into FrostSeek and provides subgroup 
 
 ## Current release
 
-**v1.4.0**
+**v1.4.1**
 
 Target environment:
 
@@ -24,7 +24,7 @@ Target environment:
 - [FrostSeek 2.2.5 or newer](https://github.com/ayro-CMD/FrostSeek)
 - Project Ascension compatible WoW 3.3.5 client
 
-FrostSeek is mandatory: WoW loads it before Aura Tracker, and v1.4.0 verifies
+FrostSeek is mandatory: WoW loads it before Aura Tracker, and v1.4.1 verifies
 that the loaded version is at least 2.2.5 before adding the Auras tab.
 
 This is a **companion addon**. It does not modify or redistribute FrostSeek source.
@@ -61,7 +61,7 @@ After loading, FrostSeek should contain a new **Auras** tab.
 Expected startup messages:
 
 ```text
-[FrostSeek Aura] Loaded Aura Tracker v1.4.0
+[FrostSeek Aura] Loaded Aura Tracker v1.4.1
 [FrostSeek Aura] Commands ready: /fsaura and /fsa
 ```
 
@@ -538,12 +538,12 @@ FrostSeek_AuraTracker/
 `-- README.txt
 
 dist/
-`-- FrostSeek_AuraTracker-v1.4.0.zip
+`-- FrostSeek_AuraTracker-v1.4.1.zip
 
 README.md
 CHANGELOG.md
 LICENSE
-RELEASE_v1.4.0.md
+RELEASE_v1.4.1.md
 .gitignore
 publish-release.ps1
 ```
