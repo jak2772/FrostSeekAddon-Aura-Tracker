@@ -2,6 +2,17 @@
 
 All notable changes to FrostSeek Aura Tracker are documented here.
 
+## [1.1.4] - 2026-08-11
+
+### Added
+- Declared FrostSeek as a mandatory dependency and documented the official repository.
+- Added a runtime minimum-version check for FrostSeek 2.2.5.
+- Added TOC metadata for the required FrostSeek version and repository.
+
+### Changed
+- Reorganized the README so requirements and installation are easier to scan.
+- Replaced corrupted directory-tree glyphs with portable ASCII formatting.
+
 ## [1.1.3] - 2026-08-11
 
 ### Fixed

@@ -1,13 +1,9 @@
-FrostSeek Aura Tracker v1.1.3
+FrostSeek Aura Tracker v1.1.4
 
-UI cleanup hotfix.
+Requires FrostSeek 2.2.5 or newer:
+https://github.com/ayro-CMD/FrostSeek
 
-- Removes Unicode check/cross/warning glyphs that Ascension's font can render
-  as confusing '?' characters.
-- Uses explicit labels: CONFIRMED PROVIDER, MANUAL PROVIDER, AURA ACTIVE,
-  PROVIDER UNKNOWN, UNKNOWN / OUT OF RANGE, NO AURA, READY, NOT READY.
-- Compacts Recruitment Replies while retaining both scrollbars.
-- Compacts Alerts and bottom-anchors it inside the FrostSeek content frame.
-- Shortens the Alerts footer.
-- Repositions Lock Overlay so its label stays inside FrostSeek.
-- All v1.1.2 logic/features are otherwise retained.
+- Declares FrostSeek as a mandatory addon dependency.
+- Checks the loaded FrostSeek version before integrating.
+- Shows one clear warning when FrostSeek is older than 2.2.5.
+- Includes the prior UI cleanup and full Aura tracking feature set.

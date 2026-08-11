@@ -8,7 +8,7 @@ It adds a dedicated **Auras** tab directly into FrostSeek and provides subgroup 
 
 ## Current release
 
-**v1.1.3**
+**v1.1.4**
 
 Target environment:
 
@@ -19,10 +19,13 @@ Target environment:
 - FrostSeek `2.2.5`
 - Locale tested: `enUS`
 
-## Requirements
+## Required dependency
 
-- FrostSeek 2.2.5
+- [FrostSeek 2.2.5 or newer](https://github.com/ayro-CMD/FrostSeek)
 - Project Ascension compatible WoW 3.3.5 client
+
+FrostSeek is mandatory: WoW loads it before Aura Tracker, and v1.1.4 verifies
+that the loaded version is at least 2.2.5 before adding the Auras tab.
 
 This is a **companion addon**. It does not modify or redistribute FrostSeek source.
 
@@ -32,19 +35,19 @@ Extract the addon folder into:
 
 ```text
 World of Warcraft/
-└── Interface/
-    └── AddOns/
-        ├── FrostSeek/
-        └── FrostSeek_AuraTracker/
+`-- Interface/
+    `-- AddOns/
+        |-- FrostSeek/
+        `-- FrostSeek_AuraTracker/
 ```
 
 The addon folder should contain:
 
 ```text
 FrostSeek_AuraTracker/
-├── FrostSeek_AuraTracker.lua
-├── FrostSeek_AuraTracker.toc
-└── README.txt
+|-- FrostSeek_AuraTracker.lua
+|-- FrostSeek_AuraTracker.toc
+`-- README.txt
 ```
 
 Then restart the client or run:
@@ -58,7 +61,7 @@ After loading, FrostSeek should contain a new **Auras** tab.
 Expected startup messages:
 
 ```text
-[FrostSeek Aura] Loaded Aura Tracker v1.1.3
+[FrostSeek Aura] Loaded Aura Tracker v1.1.4
 [FrostSeek Aura] Commands ready: /fsaura and /fsa
 ```
 
@@ -469,17 +472,17 @@ Use manual assignment when needed.
 
 ```text
 FrostSeek_AuraTracker/
-├── FrostSeek_AuraTracker.lua
-├── FrostSeek_AuraTracker.toc
-└── README.txt
+|-- FrostSeek_AuraTracker.lua
+|-- FrostSeek_AuraTracker.toc
+`-- README.txt
 
 dist/
-└── FrostSeek_AuraTracker-v1.1.3.zip
+`-- FrostSeek_AuraTracker-v1.1.4.zip
 
 README.md
 CHANGELOG.md
 LICENSE
-RELEASE_v1.1.3.md
+RELEASE_v1.1.4.md
 .gitignore
 publish-release.ps1
 ```
@@ -488,6 +491,7 @@ publish-release.ps1
 
 This repository contains FrostSeek Aura Tracker only.
 
-FrostSeek itself is a separate addon and is not redistributed here.
+[FrostSeek](https://github.com/ayro-CMD/FrostSeek) itself is a separate,
+required addon and is not redistributed here.
 
 See `LICENSE` for the companion addon's license.
