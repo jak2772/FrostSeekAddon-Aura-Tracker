@@ -2,6 +2,30 @@
 
 All notable changes to FrostSeek Aura Tracker are documented here.
 
+## [1.5.0-beta.3] - 2026-08-11
+
+### Rebuilt
+- Replaced the simplified v1.5 prototype with the complete Manastorm Recruiter 0.6.8 module stack.
+- Embedded the upstream mission-control UI directly inside FrostSeek's Auras module.
+- Included the full parser, public-chat scanner, capacity and Aura-reservation rules, applicant queue, invitation timeouts, roster editor, group optimizer, Ready Check state, Manastorm phases, rebuild recovery, minimap control, commands, settings, and twenty-field message system.
+
+### Integrated
+- FrostSeek automatic Aura provider state now feeds the complete recruiter roster, counters, UI and optimizer.
+- Manual Aura edits in the recruiter synchronize back to FrostSeek provider assignments and suppressions.
+- FrostSeek combat evidence supplies automatic Tank and Healer roles to the recruiter roster.
+- FrostSeek remains authoritative for in-instance Aura validation and the five-second entry audit, preventing duplicate Aura warnings.
+- Disabled the legacy Aura-only whisper/recruitment loop while the full recruiter is active, preventing duplicate replies and adverts.
+
+### Licensing
+- Relicensed the v1.5 derivative under GPL-3.0-or-later and added upstream attribution.
+
+## [1.5.0-beta.2] - 2026-08-11
+
+### Added
+- Added a full two-column Messages editor for automated applicant replies and workflow announcements.
+- Added editable replies for missing role, Aura, level, accepted applications, and already-inside-Manastorm responses.
+- Added an immediate Auto Replies ON/OFF control inside the Messages editor.
+
 ## [1.5.0-beta.1] - 2026-08-11
 
 ### Verification build

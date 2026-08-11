@@ -10,8 +10,13 @@ It adds a dedicated **Auras** tab directly into FrostSeek and provides subgroup 
 
 **v1.4.1**
 
-Non-live verification build: **v1.5.0-beta.1**. This adds the phased FrostSeek
-recruiter workspace while keeping v1.4.1 as the recommended stable release.
+Non-live verification build: **v1.5.0-beta.3**. This replaces the earlier
+prototype with the complete Manastorm Recruiter 0.6.8 workflow, hosted inside
+FrostSeek and augmented by FrostSeek Aura detection and role inference. v1.4.1
+remains the recommended stable release.
+
+See [FEATURE_PARITY.md](FEATURE_PARITY.md) for the complete retained baseline,
+FrostSeek extensions, and verification coverage.
 
 Target environment:
 
@@ -27,7 +32,7 @@ Target environment:
 - [FrostSeek 2.2.5 or newer](https://github.com/ayro-CMD/FrostSeek)
 - Project Ascension compatible WoW 3.3.5 client
 
-FrostSeek is mandatory: WoW loads it before Aura Tracker, and v1.4.1 verifies
+FrostSeek is mandatory: WoW loads it before Aura Tracker, and v1.5 verifies
 that the loaded version is at least 2.2.5 before adding the Auras tab.
 
 This is a **companion addon**. It does not modify or redistribute FrostSeek source.
@@ -50,6 +55,18 @@ The addon folder should contain:
 FrostSeek_AuraTracker/
 |-- FrostSeek_AuraTracker.lua
 |-- FrostSeek_AuraTracker.toc
+|-- Recruiter/
+|   |-- Core.lua
+|   |-- Parser.lua
+|   |-- Roster.lua
+|   |-- Recruitment.lua
+|   |-- Manastorm.lua
+|   |-- Rebuild.lua
+|   `-- UI.lua
+|-- Textures/
+|   `-- AuraOfExperience.tga
+|-- LICENSE.txt
+|-- THIRD_PARTY_NOTICES.txt
 `-- README.txt
 ```
 
@@ -541,21 +558,24 @@ FrostSeek_AuraTracker/
 `-- README.txt
 
 dist/
-`-- FrostSeek_AuraTracker-v1.4.1.zip
+`-- FrostSeek_AuraTracker-v1.5.0-beta.3.zip
 
 README.md
 CHANGELOG.md
 LICENSE
-RELEASE_v1.4.1.md
+RELEASE_v1.5.0-beta.3.md
+THIRD_PARTY_NOTICES.md
 .gitignore
 publish-release.ps1
 ```
 
 ## License
 
-This repository contains FrostSeek Aura Tracker only.
+FrostSeek Aura Tracker v1.5 incorporates and modifies Manastorm Recruiter
+0.6.8 under the GNU General Public License v3 or later. See
+`THIRD_PARTY_NOTICES.md` for attribution and modification details.
 
 [FrostSeek](https://github.com/ayro-CMD/FrostSeek) itself is a separate,
 required addon and is not redistributed here.
 
-See `LICENSE` for the companion addon's license.
+See `LICENSE` for the complete GPL terms.

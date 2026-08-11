@@ -11,6 +11,9 @@ work/
 *_test/
 *.log
 __pycache__/
+.verify-luaparser/
+.verify-luaparser2/
+.verify-lupa/
 
 # Keep release artifact
 !dist/

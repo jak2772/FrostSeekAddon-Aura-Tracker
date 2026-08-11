@@ -1,4 +1,4 @@
-FrostSeek Aura Tracker v1.5.0-beta.1 (verification build)
+FrostSeek Aura Tracker v1.5.0-beta.3 (verification build)
 
 Requires FrostSeek 2.2.5 or newer:
 https://github.com/ayro-CMD/FrostSeek
@@ -22,5 +22,9 @@ https://github.com/ayro-CMD/FrostSeek
 - Shows a clickable Aura of Experience icon on every occupied roster slot.
 - Adds roster posting, ready-check, and advisory group optimization actions.
 - Fixes recruitment, alert, chat, scrollbar, and message-field clipping.
-- Adds the non-live phased recruiter workspace for v1.5 verification.
-- Use Recruiter Setup or the Bonus XP minimap button to open it.
+- Integrates the complete Manastorm Recruiter 0.6.8 workflow inside FrostSeek.
+- Includes its applicants, public-chat scanner, reservations, group optimizer,
+  Ready Check state, full message system, rebuild recovery, minimap access,
+  protected run/leave actions, commands, and settings.
+- FrostSeek automatic Aura detection and combat-role evidence feed directly
+  into that complete roster and grouping workflow.

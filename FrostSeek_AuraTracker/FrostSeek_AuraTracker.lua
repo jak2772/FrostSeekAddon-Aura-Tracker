@@ -1,5 +1,5 @@
 -- ============================================================================
--- FrostSeek Aura Tracker v1.5.0-beta.1
+-- FrostSeek Aura Tracker v1.5.0-beta.3
 -- Companion module for FrostSeek 2.2.5 / WoW Ascension (3.3.5 client).
 --
 -- This addon DOES NOT modify or redistribute FrostSeek source.
@@ -16,7 +16,7 @@ local FSA = CreateFrame("Frame", "FrostSeekAuraTrackerEventFrame")
 _G.FrostSeekAuraTracker = FSA
 
 local PFX = "|cff88ccff[FrostSeek Aura]|r "
-local VERSION = "1.5.0-beta.1"
+local VERSION = "1.5.0-beta.3"
 local REQUIRED_FROSTSEEK_VERSION = "2.2.5"
 local dependencyWarningShown = false
 
@@ -3478,12 +3478,20 @@ end
 function Module:Show()
     if self.frame then
         self.frame:Show()
+        local recruiter = _G.ManastormRecruiter
+        if recruiter and recruiter.UI and recruiter.UI.frame then
+            recruiter.UI.frame:Show()
+            recruiter.UI:RefreshSettings()
+            recruiter.UI:Refresh()
+        end
         Scan(true)
     end
 end
 
 function Module:Hide()
     if self.frame then self.frame:Hide() end
+    local recruiter = _G.ManastormRecruiter
+    if recruiter and recruiter.UI and recruiter.UI.frame then recruiter.UI.frame:Hide() end
 end
 
 function Module:ApplyTheme()
@@ -3691,6 +3699,10 @@ FSA:SetScript("OnEvent", function(self, event, ...)
         RecordGroupChat(event, arg1, arg2)
 
     elseif event == "CHAT_MSG_WHISPER" then
+        -- The full recruiter baseline owns parsing, follow-up questions,
+        -- capacity replies and invitations in v1.5. Keep the legacy Aura-only
+        -- parser dormant so one whisper can never receive two replies.
+        if _G.ManastormRecruiter and _G.ManastormRecruiter.char then return end
         local message = arg1 or ""
         local sender = ShortName(arg2)
 
@@ -3836,7 +3848,8 @@ FSA:SetScript("OnUpdate", function(self, elapsed)
         end
     end
 
-    if FrostSeekAuraDB and FrostSeekAuraDB.recruiting then
+    if FrostSeekAuraDB and FrostSeekAuraDB.recruiting and
+       not (_G.ManastormRecruiter and _G.ManastormRecruiter.char) then
         state.recruitElapsed = state.recruitElapsed + elapsed
         local interval = tonumber(FrostSeekAuraDB.recruitInterval) or 60
         if interval < 30 then interval = 30 end
@@ -4004,4 +4017,42 @@ FSA.Runtime = {
     optimizeGroups = SuggestGroupOptimization,
     sendGroupMessage = SendManualGroupMessage,
     print = Print,
+    getAuraState = function(name)
+        local key = Key(name)
+        local info = state.roster and state.roster[key]
+        if FrostSeekAuraDB and FrostSeekAuraDB.ignoredProviders and FrostSeekAuraDB.ignoredProviders[key] then
+            return false, "ignored"
+        end
+        if info and (info.marked or info.detected) then
+            return true, info.detected and "automatic" or "manual"
+        end
+        if FrostSeekAuraDB and FrostSeekAuraDB.manualProviders and FrostSeekAuraDB.manualProviders[key] then
+            return true, "manual"
+        end
+        return nil, "unknown"
+    end,
+    setAuraState = function(name, enabled)
+        local key = Key(name)
+        if key == "" then return end
+        FrostSeekAuraDB.manualProviders = FrostSeekAuraDB.manualProviders or {}
+        FrostSeekAuraDB.marked = FrostSeekAuraDB.marked or {}
+        FrostSeekAuraDB.ignoredProviders = FrostSeekAuraDB.ignoredProviders or {}
+        if enabled then
+            FrostSeekAuraDB.manualProviders[key] = ShortName(name)
+            FrostSeekAuraDB.marked[key] = ShortName(name)
+            FrostSeekAuraDB.ignoredProviders[key] = nil
+        else
+            FrostSeekAuraDB.manualProviders[key] = nil
+            FrostSeekAuraDB.marked[key] = nil
+            FrostSeekAuraDB.ignoredProviders[key] = true
+        end
+        state.pendingScan = 0.05
+    end,
+    getInferredRole = function(name)
+        local record = state.roleEvidence and state.roleEvidence[Key(name)]
+        if not record then return nil end
+        if record.inferredRole == "HEALER" then return "HEAL", record.confidence end
+        if record.inferredRole == "TANK" then return "TANK", record.confidence end
+        return nil, record.confidence
+    end,
 }

@@ -1,0 +1,11 @@
+Manastorm Recruiter integration
+
+This package incorporates and modifies Manastorm Recruiter 0.6.8:
+https://github.com/Tomatensalat91/ManastormRecruiter
+
+Copyright (C) 2026 Tomatensalat91
+Licensed under GNU GPL version 3 or later.
+
+Modifications integrate the complete recruiter workflow into FrostSeek and add
+automatic Aura detection, provider inference, combat-role evidence, alerts and
+the FrostSeek overlay. See LICENSE.txt for the complete GPL terms.

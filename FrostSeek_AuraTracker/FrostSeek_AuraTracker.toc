@@ -2,11 +2,18 @@
 ## Title: FrostSeek |cff88ccffAura Tracker|r
 ## Notes: Integrated Manastorm Aura recruitment, subgroup tracker, and draggable overlay for FrostSeek.
 ## Author: Companion test module
-## Version: 1.5.0-beta.1
+## Version: 1.5.0-beta.3
 ## Dependencies: FrostSeek
 ## X-Required-FrostSeek-Version: 2.2.5
 ## X-FrostSeek-Repository: https://github.com/ayro-CMD/FrostSeek
-## SavedVariables: FrostSeekAuraDB
+## SavedVariables: FrostSeekAuraDB, ManastormRecruiterDB
+## SavedVariablesPerCharacter: ManastormRecruiterCharDB
 
 FrostSeek_AuraTracker.lua
-Recruiter.lua
+Recruiter\Core.lua
+Recruiter\Parser.lua
+Recruiter\Roster.lua
+Recruiter\Recruitment.lua
+Recruiter\Manastorm.lua
+Recruiter\Rebuild.lua
+Recruiter\UI.lua
