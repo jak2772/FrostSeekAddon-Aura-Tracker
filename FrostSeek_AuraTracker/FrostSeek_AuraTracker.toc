@@ -1,0 +1,9 @@
+## Interface: 30300
+## Title: FrostSeek |cff88ccffAura Tracker|r
+## Notes: Integrated Manastorm Aura recruitment, subgroup tracker, and draggable overlay for FrostSeek.
+## Author: Companion test module
+## Version: 1.1.3
+## Dependencies: FrostSeek
+## SavedVariables: FrostSeekAuraDB
+
+FrostSeek_AuraTracker.lua

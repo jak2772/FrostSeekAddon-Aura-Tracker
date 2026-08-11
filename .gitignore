@@ -1,0 +1,16 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Temporary / test builds
+*_test/
+*.log
+__pycache__/
+
+# Keep release artifact
+!dist/
+!dist/*.zip
