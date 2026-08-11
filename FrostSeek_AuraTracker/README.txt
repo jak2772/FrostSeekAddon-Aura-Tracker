@@ -1,4 +1,4 @@
-FrostSeek Aura Tracker v1.3.2
+FrostSeek Aura Tracker v1.4.0
 
 Requires FrostSeek 2.2.5 or newer:
 https://github.com/ayro-CMD/FrostSeek
@@ -18,3 +18,6 @@ https://github.com/ayro-CMD/FrostSeek
 - Reports three detected Auras without contradictory distribution warnings.
 - Uses compact, non-overlapping recruitment controls and warning text.
 - Lets raid leaders edit the outgoing recruitment advert in the Auras tab.
+- Replaces the old coverage rows with three live five-player raid-group panels.
+- Shows a clickable Aura of Experience icon on every occupied roster slot.
+- Adds roster posting, ready-check, and advisory group optimization actions.

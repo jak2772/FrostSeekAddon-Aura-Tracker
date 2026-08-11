@@ -1,5 +1,5 @@
 -- ============================================================================
--- FrostSeek Aura Tracker v1.3.2
+-- FrostSeek Aura Tracker v1.4.0
 -- Companion module for FrostSeek 2.2.5 / WoW Ascension (3.3.5 client).
 --
 -- This addon DOES NOT modify or redistribute FrostSeek source.
@@ -16,7 +16,7 @@ local FSA = CreateFrame("Frame", "FrostSeekAuraTrackerEventFrame")
 _G.FrostSeekAuraTracker = FSA
 
 local PFX = "|cff88ccff[FrostSeek Aura]|r "
-local VERSION = "1.3.2"
+local VERSION = "1.4.0"
 local REQUIRED_FROSTSEEK_VERSION = "2.2.5"
 local dependencyWarningShown = false
 
@@ -31,6 +31,7 @@ local MESSAGE_DEFAULTS = {
 local defaults = {
     marked = {},                 -- [lowercaseName] = displayName
     knownAuraPlayers = {},       -- [lowercaseName] = displayName, confirmed PROVIDERS only (manual or unitCaster)
+    ignoredProviders = {},       -- explicit UI opt-out for automatically learned providers
     providerCacheMigration = 0,
     inferProviderOnCoverageTransition = true,
     recruitChannel = 1,         -- IMPORTANT: Ascension is channel slot 1 by default
@@ -811,7 +812,7 @@ local function BuildRoster()
     local out = {}
     local n = RaidCount()
 
-    local function addUnit(unit, display, subgroup, online, level)
+    local function addUnit(unit, display, subgroup, online, level, raidIndex, classFile)
         local k = Key(display)
 
         local hasVisibleAura, auraName, casterUnit, spellId = UnitAuraInfo(unit)
@@ -835,7 +836,7 @@ local function BuildRoster()
 
         -- Re-check cache in case another recipient row identified this player
         -- as the caster earlier in this same roster scan.
-        if FrostSeekAuraDB.knownAuraPlayers[k] then
+        if FrostSeekAuraDB.knownAuraPlayers[k] and not FrostSeekAuraDB.ignoredProviders[k] then
             knownProvider = true
         end
 
@@ -845,6 +846,8 @@ local function BuildRoster()
             level = tonumber(level) or tonumber(UnitLevel and UnitLevel(unit)) or 0,
             online = online ~= false,
             unit = unit,
+            raidIndex = raidIndex or 99,
+            classFile = classFile,
 
             recipientHasAura = (receivesAura == true) or (hasVisibleAura and true or false),
             liveRecipientState = receivesAura, -- true / false / nil unknown
@@ -855,7 +858,7 @@ local function BuildRoster()
             auraSpellId = spellId,
 
             -- detected now means confirmed PROVIDER, never merely recipient.
-            detected = knownProvider and true or false,
+            detected = knownProvider and not FrostSeekAuraDB.ignoredProviders[k] and true or false,
             detectionSource = knownProvider and "provider-cache" or nil,
 
             marked = FrostSeekAuraDB.marked[k] and true or false,
@@ -868,20 +871,22 @@ local function BuildRoster()
             local name, rank, subgroup, level, class, fileName, zone, online =
                 GetRaidRosterInfo(i)
             if name then
-                addUnit("raid" .. i, ShortName(name), subgroup or 0, online, level)
+                addUnit("raid" .. i, ShortName(name), subgroup or 0, online, level, i, fileName)
             end
         end
     else
         local player = UnitName("player")
         if player then
-            addUnit("player", ShortName(player), 1, true, UnitLevel and UnitLevel("player") or 0)
+            local _, classFile = UnitClass and UnitClass("player")
+            addUnit("player", ShortName(player), 1, true, UnitLevel and UnitLevel("player") or 0, 1, classFile)
         end
 
         for i = 1, PartyCount() do
             local unit = "party" .. i
             local name = UnitName(unit)
             if name then
-                addUnit(unit, ShortName(name), 1, UnitIsConnected(unit) ~= false, UnitLevel and UnitLevel(unit) or 0)
+                local _, classFile = UnitClass and UnitClass(unit)
+                addUnit(unit, ShortName(name), 1, UnitIsConnected(unit) ~= false, UnitLevel and UnitLevel(unit) or 0, i + 1, classFile)
             end
         end
     end
@@ -889,7 +894,7 @@ local function BuildRoster()
     -- Second pass: recipient rows can identify a provider that appeared later
     -- in the roster iteration, so refresh detected flags from the cache.
     for k, info in pairs(out) do
-        if FrostSeekAuraDB.knownAuraPlayers[k] then
+        if FrostSeekAuraDB.knownAuraPlayers[k] and not FrostSeekAuraDB.ignoredProviders[k] then
             info.detected = true
             info.detectionSource = "provider-cache"
         end
@@ -1182,11 +1187,36 @@ local function Mark(name)
     FrostSeekAuraDB.marked[k] = display
     FrostSeekAuraDB.manualProviders = FrostSeekAuraDB.manualProviders or {}
     FrostSeekAuraDB.manualProviders[k] = display
+    FrostSeekAuraDB.ignoredProviders = FrostSeekAuraDB.ignoredProviders or {}
+    FrostSeekAuraDB.ignoredProviders[k] = nil
     if info then
         info.marked = true
         info.manual = true
     end
     Print(display .. " manually assigned as an Aura provider.")
+    state.pendingScan = 0.05
+end
+
+local function ToggleAuraProvider(name)
+    local info = FindRosterPlayer(name)
+    if not info then return end
+    local k = Key(info.name)
+    FrostSeekAuraDB.ignoredProviders = FrostSeekAuraDB.ignoredProviders or {}
+
+    if info.marked or info.detected then
+        FrostSeekAuraDB.marked[k] = nil
+        if FrostSeekAuraDB.manualProviders then FrostSeekAuraDB.manualProviders[k] = nil end
+        FrostSeekAuraDB.ignoredProviders[k] = true
+        info.marked = false
+        info.manual = false
+        info.detected = false
+        Print(info.name .. " disabled as an Aura provider.")
+    else
+        FrostSeekAuraDB.ignoredProviders[k] = nil
+        Mark(info.name)
+        return
+    end
+
     state.pendingScan = 0.05
 end
 
@@ -2181,6 +2211,56 @@ local function SendRecruitment()
     return true
 end
 
+local function PostRoster()
+    local groups = {}
+    for g = 1, 3 do
+        local players = {}
+        for _, info in pairs(state.roster or {}) do
+            if info.subgroup == g then
+                table.insert(players, info.name .. ((info.marked or info.detected) and "[A]" or ""))
+            end
+        end
+        table.sort(players)
+        table.insert(groups, "P" .. g .. ": " .. (#players > 0 and table.concat(players, "/") or "empty"))
+    end
+    GroupChat(table.concat(groups, " | "))
+end
+
+local function SendManualGroupMessage(message)
+    message = Trim(message)
+    if message == "" then return false end
+    if RaidCount() > 0 then
+        SendChatMessage(message, "RAID")
+        return true
+    elseif PartyCount() > 0 then
+        SendChatMessage(message, "PARTY")
+        return true
+    end
+    Print("Join a party or raid before sending group chat.")
+    return false
+end
+
+local function StartReadyCheck()
+    if DoReadyCheck then
+        local ok = pcall(DoReadyCheck)
+        Print(ok and "Ready check started." or "Ready check requires raid leadership.")
+    else
+        Print("Ready check is unavailable on this client or requires raid leadership.")
+    end
+end
+
+local function SuggestGroupOptimization()
+    local suggestion = MoveSuggestion(state.coverage or { [1]={}, [2]={}, [3]={} })
+    if suggestion then
+        Print(suggestion)
+    else
+        Print(CompactHealthWarning(
+            state.coverage or { [1]={}, [2]={}, [3]={} },
+            state.partyAuraSensor or { [1]=nil, [2]=nil, [3]=nil },
+            state.verifiedCoverage or { [1]={}, [2]={}, [3]={} }))
+    end
+end
+
 -- ============================================================================
 -- Roster delta alerts
 -- ============================================================================
@@ -2778,59 +2858,76 @@ local function CreateUI(parent)
 
     local st = statusBlock:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     st:SetPoint("TOPLEFT", 12, -10)
-    st:SetText("Aura coverage")
+    st:SetText("Raid groups")
 
     local summary = statusBlock:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     summary:SetPoint("TOPRIGHT", -12, -10)
     ui.summary = summary
 
-    ui.rows = {}
+    ui.groups = {}
     for g = 1, 3 do
-        local row = NewBlock(statusBlock)
-        row:SetPoint("TOPLEFT", 10, -38 - ((g-1)*43))
-        row:SetSize(545, 36)
+        local panel = NewBlock(statusBlock)
+        panel:SetPoint("TOPLEFT", 10 + ((g - 1) * 181), -34)
+        panel:SetSize(175, 150)
 
-        local p = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        p:SetPoint("LEFT", 10, 0)
-        p:SetWidth(65)
-        p:SetJustifyH("LEFT")
-        p:SetText("Party " .. g)
+        local groupName = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        groupName:SetPoint("TOPLEFT", 7, -6)
+        groupName:SetText("Group " .. g)
 
-        local name = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        name:SetPoint("LEFT", 78, 0)
-        name:SetWidth(275)
-        name:SetJustifyH("LEFT")
+        local groupState = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        groupState:SetPoint("TOPRIGHT", -7, -7)
+        groupState:SetWidth(92)
+        groupState:SetJustifyH("RIGHT")
 
-        local setBtn = NewButton(row, 70, 22, "Set")
-        setBtn:SetPoint("RIGHT", -83, 0)
-        setBtn:SetScript("OnClick", function(self)
-            OpenRosterMenuForGroup(g, self)
-        end)
+        local rows = {}
+        for slot = 1, 5 do
+            local playerRow = CreateFrame("Frame", nil, panel)
+            playerRow:SetPoint("TOPLEFT", 6, -27 - ((slot - 1) * 23))
+            playerRow:SetSize(163, 21)
 
-        local clearBtn = NewButton(row, 70, 22, "Clear")
-        clearBtn:SetPoint("RIGHT", -7, 0)
-        clearBtn:SetScript("OnClick", function()
-            local list = state.coverage[g] or {}
-            if #list == 0 then return end
-            for _, info in ipairs(list) do Unmark(info.name) end
-        end)
+            local aura = CreateFrame("Button", nil, playerRow)
+            aura:SetPoint("LEFT", 0, 0)
+            aura:SetSize(18, 18)
+            local auraTexture = aura:CreateTexture(nil, "ARTWORK")
+            auraTexture:SetAllPoints()
+            auraTexture:SetTexture((GetSpellTexture and GetSpellTexture(818059)) or
+                                   "Interface\\Icons\\Spell_Holy_GreaterBlessingofKings")
+            aura.texture = auraTexture
 
-        ui.rows[g] = { frame=row, name=name, set=setBtn, clear=clearBtn }
+            local name = playerRow:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            name:SetPoint("LEFT", aura, "RIGHT", 4, 0)
+            name:SetWidth(91)
+            name:SetJustifyH("LEFT")
+
+            local role = playerRow:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            role:SetPoint("RIGHT", -27, 0)
+            role:SetWidth(18)
+            role:SetJustifyH("CENTER")
+
+            local level = playerRow:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            level:SetPoint("RIGHT", -1, 0)
+            level:SetWidth(25)
+            level:SetJustifyH("RIGHT")
+
+            rows[slot] = {frame=playerRow, aura=aura, name=name, role=role, level=level}
+        end
+
+        ui.groups[g] = {frame=panel, state=groupState, rows=rows}
     end
 
     local warning = statusBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    warning:SetPoint("TOPLEFT", 12, -174)
+    warning:SetPoint("TOPLEFT", 12, -190)
     warning:SetWidth(535)
     warning:SetHeight(20)
     warning:SetJustifyH("LEFT")
     ui.warning = warning
 
     local warningNote = statusBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    warningNote:SetPoint("TOPLEFT", 12, -199)
+    warningNote:SetPoint("TOPLEFT", 12, -211)
     warningNote:SetWidth(535)
-    warningNote:SetHeight(28)
+    warningNote:SetHeight(18)
     warningNote:SetJustifyH("LEFT")
-    warningNote:SetText("|cff8f96a3Automatic verification/distribution requires local range; treat it as authoritative inside Manastorm or when the relevant party is nearby.|r")
+    warningNote:SetText("|cff8f96a3Bright Aura icons are assigned providers; click any player's icon to toggle.|r")
     ui.warningNote = warningNote
 
     -- RECRUIT BLOCK -----------------------------------------------------------
@@ -2927,12 +3024,12 @@ local function CreateUI(parent)
     scanCheck:SetPoint("TOPLEFT", 10, -108)
     ui.scanCheck = scanCheck
 
-    local nowBtn = NewButton(recruitBlock, 105, 25, "Advertise Now")
+    local nowBtn = NewButton(recruitBlock, 82, 25, "Advertise")
     nowBtn:SetPoint("BOTTOMLEFT", 12, 13)
     nowBtn:SetScript("OnClick", SendRecruitment)
 
-    local startBtn = NewButton(recruitBlock, 105, 25, "Start Repeat")
-    startBtn:SetPoint("LEFT", nowBtn, "RIGHT", 8, 0)
+    local startBtn = NewButton(recruitBlock, 82, 25, "Repeat")
+    startBtn:SetPoint("LEFT", nowBtn, "RIGHT", 6, 0)
     startBtn:SetScript("OnClick", function()
         if RaidAuraReady(state.coverage, state.partyAuraSensor or {}) then
             Print("Aura state is already raid-ready.")
@@ -2946,8 +3043,8 @@ local function CreateUI(parent)
     end)
     ui.startBtn = startBtn
 
-    local stopBtn = NewButton(recruitBlock, 105, 25, "Stop")
-    stopBtn:SetPoint("LEFT", startBtn, "RIGHT", 8, 0)
+    local stopBtn = NewButton(recruitBlock, 82, 25, "Stop")
+    stopBtn:SetPoint("LEFT", startBtn, "RIGHT", 6, 0)
     stopBtn:SetScript("OnClick", function()
         FrostSeekAuraDB.recruiting = false
         state.recruitElapsed = 0
@@ -2955,9 +3052,17 @@ local function CreateUI(parent)
         Print("Aura recruitment stopped.")
     end)
 
-    local scanBtn = NewButton(recruitBlock, 105, 25, "Scan Raid")
-    scanBtn:SetPoint("LEFT", stopBtn, "RIGHT", 8, 0)
-    scanBtn:SetScript("OnClick", function() Scan(false) end)
+    local rosterBtn = NewButton(recruitBlock, 82, 25, "Post Roster")
+    rosterBtn:SetPoint("LEFT", stopBtn, "RIGHT", 6, 0)
+    rosterBtn:SetScript("OnClick", PostRoster)
+
+    local readyBtn = NewButton(recruitBlock, 82, 25, "Ready Check")
+    readyBtn:SetPoint("LEFT", rosterBtn, "RIGHT", 6, 0)
+    readyBtn:SetScript("OnClick", StartReadyCheck)
+
+    local optimizeBtn = NewButton(recruitBlock, 82, 25, "Optimize")
+    optimizeBtn:SetPoint("LEFT", readyBtn, "RIGHT", 6, 0)
+    optimizeBtn:SetScript("OnClick", SuggestGroupOptimization)
 
     -- RIGHT COLUMN: recruitment replies ---------------------------------------
     local candBlock = NewBlock(frame)
@@ -3061,19 +3166,23 @@ local function CreateUI(parent)
         function(v) FrostSeekAuraDB.announceLevel59 = v end)
     level59Alert:SetPoint("TOPLEFT", 10, -158)
 
-    local divider = alertBlock:CreateTexture(nil, "ARTWORK")
-    divider:SetPoint("TOPLEFT", 10, -182)
-    divider:SetPoint("TOPRIGHT", -10, -182)
-    divider:SetHeight(1)
-    ColorTexture(divider, "border", {0.25, 0.27, 0.31, 0.7})
+    local chatLabel = alertBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    chatLabel:SetPoint("BOTTOMLEFT", 10, 12)
+    chatLabel:SetText("Chat:")
 
-    local alertNote = alertBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    alertNote:SetPoint("TOPLEFT", 12, -188)
-    alertNote:SetWidth(294)
-    alertNote:SetHeight(18)
-    alertNote:SetJustifyH("LEFT")
-    alertNote:SetJustifyV("TOP")
-    alertNote:SetText("|cff8f96a3Local verification is authoritative inside Manastorm; join/leave uses roster data.|r")
+    local chatEdit = NewEdit(alertBlock, 185, 20, "", false)
+    chatEdit:SetPoint("BOTTOMLEFT", 48, 7)
+    chatEdit:SetMaxLetters(220)
+    ui.chatEdit = chatEdit
+
+    local sendChat = NewButton(alertBlock, 62, 20, "Send")
+    sendChat:SetPoint("BOTTOMRIGHT", -8, 7)
+    local function SendChatEdit()
+        if SendManualGroupMessage(chatEdit:GetText()) then chatEdit:SetText("") end
+        chatEdit:ClearFocus()
+    end
+    sendChat:SetScript("OnClick", SendChatEdit)
+    chatEdit:SetScript("OnEnterPressed", SendChatEdit)
 
     ui.alertChecks = {c1,leaderOnly,soundAlert,c2,c3,c4,c5,level59Alert}
 
@@ -3221,37 +3330,69 @@ RefreshUI = function()
     end
 
     for g = 1, 3 do
-        local code, detail = PartyHealth(g, c, sensor, verified)
-        local text
-
-        if code == "CONFIRMED" then
-            text = "|cff66ff66" .. detail .. "|r  |cff66ff66CONFIRMED PROVIDER|r"
-        elseif code == "MANUAL_ACTIVE" then
-            text = "|cff66ff66" .. detail .. "|r  |cffffff66MANUAL PROVIDER|r"
-        elseif code == "ACTIVE_ASSIGNED" then
-            text = "|cff66ff66" .. detail .. "|r  |cff88ccffAURA ACTIVE|r"
+        local code = PartyHealth(g, c, sensor, verified)
+        local header
+        if code == "CONFIRMED" or code == "MANUAL_ACTIVE" or code == "ACTIVE_ASSIGNED" then
+            header = "|cff66ff66AURA OK|r"
         elseif code == "ACTIVE_UNKNOWN" then
-            text = "|cff66ff66AURA ACTIVE|r  |cffffff66PROVIDER UNKNOWN|r"
-        elseif code == "MANUAL_UNKNOWN" then
-            text = "|cffffff66" .. detail .. "|r  |cffffff66MANUAL / OUT OF RANGE|r"
-        elseif code == "OUT_OF_RANGE" then
-            text = "|cffffff66" .. detail .. "|r  |cff888888UNKNOWN / OUT OF RANGE|r"
-        elseif code == "INACTIVE_ASSIGNED" then
-            text = "|cffff5555" .. detail .. "|r  |cffff5555AURA INACTIVE|r"
+            header = "|cffffff66AURA / ?|r"
         elseif code == "DUPLICATE" then
-            local names={}
-            for _,info in ipairs(c[g]) do table.insert(names,ProviderDisplayName(info)) end
-            text = "|cffffaa00" .. table.concat(names,", ") .. "|r  |cffffaa00DUPLICATE PROVIDERS|r"
-        elseif code == "NO_AURA" then
-            text = "|cffff5555NO AURA|r"
+            header = "|cffffaa00DUPLICATE|r"
+        elseif code == "NO_AURA" or code == "INACTIVE_ASSIGNED" then
+            header = "|cffff5555NO AURA|r"
         else
-            text = "|cffffff66UNKNOWN / OUT OF RANGE|r"
+            header = "|cff888888UNKNOWN|r"
         end
+        ui.groups[g].state:SetText(header)
 
-        ui.rows[g].name:SetText(text)
-        ui.rows[g].clear.text:SetTextColor(#(c[g] or {}) > 0 and 1 or 0.45,
-                                           #(c[g] or {}) > 0 and 1 or 0.45,
-                                           #(c[g] or {}) > 0 and 1 or 0.45)
+        local players = {}
+        for _, info in pairs(state.roster or {}) do
+            if info.subgroup == g then table.insert(players, info) end
+        end
+        table.sort(players, function(a, b)
+            if (a.raidIndex or 99) == (b.raidIndex or 99) then return a.name < b.name end
+            return (a.raidIndex or 99) < (b.raidIndex or 99)
+        end)
+
+        for slot = 1, 5 do
+            local row = ui.groups[g].rows[slot]
+            local info = players[slot]
+            if info then
+                local k = Key(info.name)
+                local active = info.marked or info.detected
+                local roleEvidence = state.roleEvidence[k]
+                local role = roleEvidence and roleEvidence.inferredRole or nil
+                row.name:SetText(info.online and info.name or ("|cff777777" .. info.name .. "|r"))
+                row.level:SetText((tonumber(info.level) or 0) > 0 and tostring(info.level) or "?")
+                row.role:SetText(role == "TANK" and "|cff88ccffT|r" or
+                                 role == "HEALER" and "|cff66ff66H|r" or "|cff777777-|r")
+                row.aura.texture:SetAlpha(active and 1 or 0.18)
+                if row.aura.texture.SetDesaturated then
+                    row.aura.texture:SetDesaturated(not active)
+                end
+                row.aura:SetScript("OnClick", function() ToggleAuraProvider(info.name) end)
+                row.aura:SetScript("OnEnter", function(self)
+                    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                    GameTooltip:SetText(info.name)
+                    GameTooltip:AddLine(active and "Aura provider enabled" or "Aura provider disabled", active and 0.4 or 0.65, active and 1 or 0.65, active and 0.4 or 0.65)
+                    GameTooltip:AddLine("Click to toggle this player's Aura assignment.", 0.8, 0.8, 0.8, true)
+                    if info.detected then GameTooltip:AddLine("Provider automatically confirmed.", 0.5, 0.8, 1, true) end
+                    GameTooltip:Show()
+                end)
+                row.aura:SetScript("OnLeave", function() GameTooltip:Hide() end)
+                row.aura:Enable()
+            else
+                row.name:SetText("|cff555555Empty|r")
+                row.level:SetText("")
+                row.role:SetText("")
+                row.aura.texture:SetAlpha(0.05)
+                if row.aura.texture.SetDesaturated then row.aura.texture:SetDesaturated(true) end
+                row.aura:SetScript("OnClick", nil)
+                row.aura:SetScript("OnEnter", nil)
+                row.aura:SetScript("OnLeave", nil)
+                row.aura:Disable()
+            end
+        end
     end
 
     local healthWarning = CompactHealthWarning(c, sensor, verified)
@@ -3275,10 +3416,10 @@ RefreshUI = function()
     if ui.localNote then
         if IsInManastorm() then
             ui.localNote:SetText("|cff66ff66Inside Manastorm: local Aura verification is authoritative after the entry audit.|r")
-            ui.warningNote:SetText("|cff8f96a3Live subgroup Aura state is authoritative here. Roster provider identity may still be manual/confirmed separately.|r")
+            ui.warningNote:SetText("|cff8f96a3Bright icon = provider. Click an Aura icon to toggle; subgroup sensing remains authoritative.|r")
         else
             ui.localNote:SetText("|cffffcc66Outside Manastorm: Aura verification is local-range only.|r")
-            ui.warningNote:SetText("|cff8f96a3Outside the instance, UNKNOWN/out-of-range is not treated as a failed Aura unless local data says NO AURA.|r")
+            ui.warningNote:SetText("|cff8f96a3Grey icon = unassigned. Click to toggle; outside-instance sensing is range-limited.|r")
         end
     end
 
@@ -3296,7 +3437,7 @@ RefreshUI = function()
         ui.startBtn:SetLabel("Running...")
         ui.startBtn.text:SetTextColor(0.4,1,0.4)
     else
-        ui.startBtn:SetLabel("Start Repeat")
+        ui.startBtn:SetLabel("Repeat")
         ui.startBtn.text:SetTextColor(1,1,1)
     end
 

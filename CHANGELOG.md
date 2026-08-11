@@ -2,6 +2,20 @@
 
 All notable changes to FrostSeek Aura Tracker are documented here.
 
+## [1.4.0] - 2026-08-11
+
+### Added
+- Three live five-player raid-group panels in the FrostSeek Auras tab.
+- Aura of Experience icon on every occupied roster slot.
+- Clickable bright/grey Aura assignment toggle with explicit automatic-provider suppression.
+- Compact role and level indicators for every raid member.
+- `Post Roster`, `Ready Check`, and advisory `Optimize` actions.
+- Inline party/raid chat composer in the setup panel.
+
+### Changed
+- Replaced the former three-row coverage section with the operational raid board.
+- Moved subgroup health into each group header while preserving existing sensing and provider-inference logic.
+
 ## [1.3.2] - 2026-08-11
 
 ### Added

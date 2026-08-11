@@ -8,7 +8,7 @@ It adds a dedicated **Auras** tab directly into FrostSeek and provides subgroup 
 
 ## Current release
 
-**v1.3.2**
+**v1.4.0**
 
 Target environment:
 
@@ -24,7 +24,7 @@ Target environment:
 - [FrostSeek 2.2.5 or newer](https://github.com/ayro-CMD/FrostSeek)
 - Project Ascension compatible WoW 3.3.5 client
 
-FrostSeek is mandatory: WoW loads it before Aura Tracker, and v1.3.2 verifies
+FrostSeek is mandatory: WoW loads it before Aura Tracker, and v1.4.0 verifies
 that the loaded version is at least 2.2.5 before adding the Auras tab.
 
 This is a **companion addon**. It does not modify or redistribute FrostSeek source.
@@ -61,7 +61,7 @@ After loading, FrostSeek should contain a new **Auras** tab.
 Expected startup messages:
 
 ```text
-[FrostSeek Aura] Loaded Aura Tracker v1.3.2
+[FrostSeek Aura] Loaded Aura Tracker v1.4.0
 [FrostSeek Aura] Commands ready: /fsaura and /fsa
 ```
 
@@ -176,6 +176,20 @@ Auras: 2/3 NOT READY
 Auras: 1/3 UNKNOWN
 ```
 
+## Raid-group board
+
+The Auras tab shows three five-player panels matching the Manastorm raid
+subgroups. Each occupied slot includes the player name, level, inferred Tank or
+Healer role, and an Aura of Experience icon.
+
+- bright icon: assigned or confirmed Aura provider
+- grey icon: provider assignment disabled
+- click any occupied icon to toggle that player's manual Aura assignment
+- disabling an automatically learned provider suppresses that identity without
+  disabling the independent subgroup Aura sensor
+
+Group headers show `AURA OK`, `AURA / ?`, `NO AURA`, `DUPLICATE`, or `UNKNOWN`.
+
 ## Provider inference
 
 Because Ascension does not expose owner identity consistently, the addon can infer a provider from a safe subgroup transition:
@@ -240,7 +254,10 @@ Controls include:
 - Advertise Now
 - Start Repeat
 - Stop
-- Scan Raid
+- Post Roster
+- Ready Check
+- Optimize (advisory Aura distribution suggestion)
+- inline party/raid chat field
 - configurable channel slot
 - configurable repeat interval
 - periodic safety scan
@@ -521,12 +538,12 @@ FrostSeek_AuraTracker/
 `-- README.txt
 
 dist/
-`-- FrostSeek_AuraTracker-v1.3.2.zip
+`-- FrostSeek_AuraTracker-v1.4.0.zip
 
 README.md
 CHANGELOG.md
 LICENSE
-RELEASE_v1.3.2.md
+RELEASE_v1.4.0.md
 .gitignore
 publish-release.ps1
 ```
