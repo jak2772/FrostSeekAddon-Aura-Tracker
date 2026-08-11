@@ -2,7 +2,7 @@ param(
     [Parameter(Mandatory=$true)]
     [string]$Repo,
 
-    [string]$Version = "v1.3.1"
+    [string]$Version = "v1.3.2"
 )
 
 $ErrorActionPreference = "Stop"
@@ -41,9 +41,9 @@ git tag -f $Version
 git push origin $Version --force
 
 gh release create $Version `
-    "dist/FrostSeek_AuraTracker-v1.3.1.zip" `
+    "dist/FrostSeek_AuraTracker-v1.3.2.zip" `
     --repo $Repo `
     --title "FrostSeek Aura Tracker $Version" `
-    --notes-file "RELEASE_v1.3.1.md"
+    --notes-file "RELEASE_v1.3.2.md"
 
 Write-Host "Release published."

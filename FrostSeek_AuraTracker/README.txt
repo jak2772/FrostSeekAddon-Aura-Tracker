@@ -1,4 +1,4 @@
-FrostSeek Aura Tracker v1.3.1
+FrostSeek Aura Tracker v1.3.2
 
 Requires FrostSeek 2.2.5 or newer:
 https://github.com/ayro-CMD/FrostSeek
@@ -16,3 +16,5 @@ https://github.com/ayro-CMD/FrostSeek
 - Can ask missing recruitment questions automatically with configurable messages.
 - Captures recent raid/party chat and provides a direct group-message command.
 - Reports three detected Auras without contradictory distribution warnings.
+- Uses compact, non-overlapping recruitment controls and warning text.
+- Lets raid leaders edit the outgoing recruitment advert in the Auras tab.

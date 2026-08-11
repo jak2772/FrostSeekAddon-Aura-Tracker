@@ -1,5 +1,5 @@
 -- ============================================================================
--- FrostSeek Aura Tracker v1.3.1
+-- FrostSeek Aura Tracker v1.3.2
 -- Companion module for FrostSeek 2.2.5 / WoW Ascension (3.3.5 client).
 --
 -- This addon DOES NOT modify or redistribute FrostSeek source.
@@ -16,7 +16,7 @@ local FSA = CreateFrame("Frame", "FrostSeekAuraTrackerEventFrame")
 _G.FrostSeekAuraTracker = FSA
 
 local PFX = "|cff88ccff[FrostSeek Aura]|r "
-local VERSION = "1.3.1"
+local VERSION = "1.3.2"
 local REQUIRED_FROSTSEEK_VERSION = "2.2.5"
 local dependencyWarningShown = false
 
@@ -36,6 +36,7 @@ local defaults = {
     recruitChannel = 1,         -- IMPORTANT: Ascension is channel slot 1 by default
     recruitInterval = 60,
     recruiting = false,
+    recruitMessage = "",       -- blank uses the generated coverage-aware advert
     autoInviteAuraWhispers = false, -- exact trimmed/case-insensitive "aura" only
     autoApplicantReplies = true,
     candidateLifetime = 600,    -- seconds
@@ -1116,6 +1117,30 @@ local function ReasonAwareWarning(c, sensor, verified)
     return msg
 end
 
+local function CompactHealthWarning(c, sensor, verified)
+    local missing, inactive, duplicate, unknown = {}, {}, {}, {}
+    for g = 1, 3 do
+        local code = PartyHealth(g, c, sensor, verified)
+        local label = "P" .. g
+        if code == "NO_AURA" then
+            table.insert(missing, label)
+        elseif code == "INACTIVE_ASSIGNED" then
+            table.insert(inactive, label)
+        elseif code == "DUPLICATE" then
+            table.insert(duplicate, label)
+        elseif code == "OUT_OF_RANGE" or code == "MANUAL_UNKNOWN" or code == "UNKNOWN" then
+            table.insert(unknown, label)
+        end
+    end
+
+    local bits = {}
+    if #missing > 0 then table.insert(bits, table.concat(missing, "/") .. " missing Aura") end
+    if #inactive > 0 then table.insert(bits, table.concat(inactive, "/") .. " Aura inactive") end
+    if #duplicate > 0 then table.insert(bits, table.concat(duplicate, "/") .. " duplicate") end
+    if #unknown > 0 then table.insert(bits, table.concat(unknown, "/") .. " provider unverified") end
+    return #bits > 0 and (table.concat(bits, "; ") .. ".") or "Aura state healthy."
+end
+
 local function AllGroupsReportingAuraMessage(c, sensor, verified)
     for g = 1, 3 do
         if sensor[g] ~= true then return nil end
@@ -2098,7 +2123,7 @@ end
 -- Recruitment
 -- ============================================================================
 
-local function RecruitmentMessage()
+local function GeneratedRecruitmentMessage()
     local c = state.coverage
     local sensor = state.partyAuraSensor or { [1]=nil,[2]=nil,[3]=nil }
     local missing = RecruitmentMissingGroups(c, sensor)
@@ -2119,6 +2144,13 @@ local function RecruitmentMessage()
     return "LFM Manastorm Leveling " .. GroupSize() ..
            "/15 - need Aura for " .. where ..
            " (" .. need .. " players). Whisper \"aura\" for invite."
+end
+
+local function RecruitmentMessage()
+    local generated = GeneratedRecruitmentMessage()
+    if not generated then return nil end
+    local custom = Trim(FrostSeekAuraDB and FrostSeekAuraDB.recruitMessage or "")
+    return custom ~= "" and custom or generated
 end
 local function ChannelDisplay(slot)
     slot = tonumber(slot) or 1
@@ -2810,13 +2842,28 @@ local function CreateUI(parent)
     rt:SetPoint("TOPLEFT", 12, -10)
     rt:SetText("Aura recruitment")
 
-    local preview = recruitBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    rt:SetText("Recruitment message (editable)")
+
+    local preview = NewEdit(recruitBlock, 430, 24, "", false)
     preview:SetPoint("TOPLEFT", 12, -34)
-    preview:SetWidth(535)
-    preview:SetHeight(38)
-    preview:SetJustifyH("LEFT")
-    preview:SetJustifyV("TOP")
+    preview:SetMaxLetters(255)
+    preview:SetScript("OnEnterPressed", function(self)
+        FrostSeekAuraDB.recruitMessage = Trim(self:GetText())
+        self:ClearFocus()
+        RefreshUI()
+    end)
+    preview:SetScript("OnEditFocusLost", function(self)
+        FrostSeekAuraDB.recruitMessage = Trim(self:GetText())
+        RefreshUI()
+    end)
     ui.preview = preview
+
+    local resetMessage = NewButton(recruitBlock, 92, 22, "Use Auto")
+    resetMessage:SetPoint("LEFT", preview, "RIGHT", 8, 0)
+    resetMessage:SetScript("OnClick", function()
+        FrostSeekAuraDB.recruitMessage = ""
+        RefreshUI()
+    end)
 
     local chLabel = recruitBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     chLabel:SetPoint("TOPLEFT", 12, -80)
@@ -2953,16 +3000,16 @@ local function CreateUI(parent)
     ui.auraCandidateList = CreateCandidateScroller(candBlock, "|cff66ff66Aura candidates|r", -54)
     ui.nonAuraCandidateList = CreateCandidateScroller(candBlock, "|cffffcc66Non-aura candidates|r", -145)
 
-    local autoInv = NewCheckbox(candBlock, "Auto-invite exact 'aura' replies",
+    local autoInv = NewCheckbox(candBlock, "Auto-invite",
         FrostSeekAuraDB.autoInviteAuraWhispers,
         function(v) FrostSeekAuraDB.autoInviteAuraWhispers = v end)
     autoInv:SetPoint("BOTTOMLEFT", 10, 8)
     ui.autoInvite = autoInv
 
-    local autoReply = NewCheckbox(candBlock, "Auto follow-up questions",
+    local autoReply = NewCheckbox(candBlock, "Auto follow-up",
         FrostSeekAuraDB.autoApplicantReplies,
         function(v) FrostSeekAuraDB.autoApplicantReplies = v end)
-    autoReply:SetPoint("BOTTOMLEFT", 162, 8)
+    autoReply:SetPoint("BOTTOMLEFT", 145, 8)
     ui.autoReply = autoReply
 
     -- RIGHT COLUMN: alerts ----------------------------------------------------
@@ -3207,7 +3254,7 @@ RefreshUI = function()
                                            #(c[g] or {}) > 0 and 1 or 0.45)
     end
 
-    local healthWarning = ReasonAwareWarning(c, sensor, verified)
+    local healthWarning = CompactHealthWarning(c, sensor, verified)
     local level59Warnings = {}
     for _, info in pairs(state.roster or {}) do
         if IsTrackedAuraProvider(info) and tonumber(info.level) == 59 then
@@ -3235,11 +3282,11 @@ RefreshUI = function()
         end
     end
 
-    local msg = RecruitmentMessage()
-    if msg then
-        ui.preview:SetText("|cffbbbbbbPreview:|r " .. msg)
-    else
-        ui.preview:SetText("|cff66ff66Aura recruitment not required by current sensor + assignment state.|r")
+    local generatedMessage = GeneratedRecruitmentMessage()
+    local previewText = Trim(FrostSeekAuraDB.recruitMessage or "")
+    if previewText == "" then previewText = generatedMessage or "Aura recruitment not required." end
+    if ui.preview and not ui.preview:HasFocus() and ui.preview:GetText() ~= previewText then
+        ui.preview:SetText(previewText)
     end
 
     local slot = tonumber(FrostSeekAuraDB.recruitChannel) or 1

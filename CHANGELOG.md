@@ -2,6 +2,15 @@
 
 All notable changes to FrostSeek Aura Tracker are documented here.
 
+## [1.3.2] - 2026-08-11
+
+### Added
+- Editable outgoing recruitment message field with a `Use Auto` reset.
+
+### Fixed
+- Shortened the auto-invite and auto-follow-up labels to prevent overlap.
+- Condensed coverage warnings so they fit the status panel.
+
 ## [1.3.1] - 2026-08-11
 
 ### Fixed
