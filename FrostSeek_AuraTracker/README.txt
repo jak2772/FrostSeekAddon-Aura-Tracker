@@ -1,4 +1,4 @@
-FrostSeek Aura Tracker v1.3.0
+FrostSeek Aura Tracker v1.3.1
 
 Requires FrostSeek 2.2.5 or newer:
 https://github.com/ayro-CMD/FrostSeek

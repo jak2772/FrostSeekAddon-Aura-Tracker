@@ -2,6 +2,12 @@
 
 All notable changes to FrostSeek Aura Tracker are documented here.
 
+## [1.3.1] - 2026-08-11
+
+### Fixed
+- Rebuilt and republished the distributable ZIP after the v1.3.0 release asset was truncated during upload.
+- No gameplay logic changes from v1.3.0.
+
 ## [1.3.0] - 2026-08-11
 
 ### Added
